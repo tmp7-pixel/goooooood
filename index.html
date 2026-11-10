@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>THE INFINITY BURGER ♾️🍔 - Cook Beyond Limits</title>
+  <link rel="stylesheet" href="style.css">
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+  <!-- Canvas Confetti & Three.js & TWEEN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/tween.js/18.6.4/tween.umd.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+  <!-- 3D Canvas Container -->
+  <div id="canvas-container"></div>
+
+  <!-- Ambient Golden Particles & Sparks Canvas Overlay -->
+  <canvas id="fx-canvas"></canvas>
+
+  <!-- GAME HUD & INTERFACE -->
+  <div id="game-ui">
+    <!-- Top Bar -->
+    <header class="top-bar">
+      <div class="brand">
+        <span class="infinity-icon">♾️</span>
+        <div class="brand-text">
+          <h1>THE INFINITY BURGER</h1>
+          <span class="tagline">COOK BEYOND LIMITS</span>
+        </div>
+      </div>
+
+      <div class="stats-group">
+        <div class="stat-badge world-badge" id="btn-world-select" title="Change Realm">
+          <span class="badge-icon">🌌</span>
+          <div class="badge-content">
+            <span class="badge-label">REALM</span>
+            <span class="badge-val" id="hud-realm-name">Cosmic Kitchen</span>
+          </div>
+        </div>
+
+        <div class="stat-badge">
+          <span class="badge-icon">🪙</span>
+          <div class="badge-content">
+            <span class="badge-label">COINS</span>
+            <span class="badge-val" id="hud-coins">500</span>
+          </div>
+        </div>
+
+        <div class="stat-badge">
+          <span class="badge-icon">✨</span>
+          <div class="badge-content">
+            <span class="badge-label">INFINITY ESSENCE</span>
+            <span class="badge-val" id="hud-essence">10</span>
+          </div>
+        </div>
+
+        <div class="stat-badge level-badge">
+          <span class="badge-icon">👑</span>
+          <div class="badge-content">
+            <span class="badge-label">CHEF LVL</span>
+            <span class="badge-val" id="hud-level">1 <small>(0/100 XP)</small></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="top-actions">
+        <button id="btn-recipes" class="nav-btn" title="Secret Infinity Recipes">📖 Recipes</button>
+        <button id="btn-upgrades" class="nav-btn" title="Kitchen & Ingredient Upgrades">⚡ Upgrades</button>
+        <button id="btn-compete" class="nav-btn highlight-btn" title="Infinity Chef Competition">🏆 Competition</button>
+        <button id="btn-audio-toggle" class="icon-btn" title="Toggle Sound">🔊</button>
+      </div>
+    </header>
+
+    <!-- ACTIVE CUSTOMER & TICKET CARD -->
+    <div id="ticket-container" class="ticket-card animate-slide-in">
+      <div class="customer-avatar-box">
+        <div id="customer-avatar" class="avatar-icon">👑</div>
+        <div class="customer-info">
+          <div class="customer-header">
+            <span id="customer-name" class="customer-name">Emperor Gluttonus</span>
+            <span id="customer-tag" class="customer-tag legendary">ROYALTY</span>
+          </div>
+          <p id="customer-quote" class="customer-quote">"Make it scrape the heavens! Infinite glory!"</p>
+        </div>
+      </div>
+
+      <div class="order-divider"></div>
+
+      <!-- Burger Recipe / Targets Display -->
+      <div class="order-box">
+        <div class="order-title">
+          <span>DESIRED LAYERS (<span id="matched-count">0</span>/<span id="target-count">4</span>)</span>
+          <span id="timer-badge" class="timer-badge">⏳ 45s</span>
+        </div>
+        <div id="order-recipe-list" class="order-recipe-list">
+          <!-- Dynamic order badges -->
+        </div>
+      </div>
+
+      <!-- Current Stack Preview / Height -->
+      <div class="stack-status-bar">
+        <span>Current Stack: <strong id="stack-count">0</strong> items | Height: <strong id="stack-height">0.0m</strong></span>
+        <span id="combo-multiplier" class="combo-pill">1.0x MULTIPLIER</span>
+      </div>
+    </div>
+
+    <!-- FLOATING COMBAT / ACTION ANNOUNCER -->
+    <div id="game-announcer" class="announcer"></div>
+
+    <!-- CONTROLS & ACTION BAR -->
+    <div class="bottom-action-bar">
+      <!-- Ingredient Category Tabs -->
+      <div class="category-tabs" id="category-tabs">
+        <button class="cat-tab active" data-cat="buns">🥖 Buns</button>
+        <button class="cat-tab" data-cat="patties">🥩 Patties</button>
+        <button class="cat-tab" data-cat="cheeses">🧀 Cheeses</button>
+        <button class="cat-tab" data-cat="toppings">🥗 Toppings</button>
+        <button class="cat-tab" data-cat="sauces">🍯 Sauces</button>
+        <button class="cat-tab cosmic" data-cat="cosmic">✨ Infinity Relics</button>
+      </div>
+
+      <!-- Ingredient Carousel / Selector -->
+      <div class="ingredient-carousel" id="ingredient-shelf">
+        <!-- Injected via JavaScript -->
+      </div>
+
+      <!-- Core Controls: Serve, Reset, Infinity Stomp -->
+      <div class="control-actions">
+        <button id="btn-undo" class="action-btn secondary" title="Remove Top Ingredient">↩️ Undo</button>
+        <button id="btn-clear" class="action-btn secondary" title="Restart Current Burger">🗑️ Scramble</button>
+        <button id="btn-camera" class="action-btn secondary" title="Switch 3D Camera View">🎥 Angle</button>
+        <button id="btn-infinity-special" class="action-btn ultimate-btn" title="Infuse with Golden Infinity Beam!">✨ INFINITY INFUSION</button>
+        <button id="btn-serve" class="action-btn serve-btn pulse-anim" title="Serve Burger to Customer!">🍔 SERVE BURGER!</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- POPUP MODALS -->
+
+  <!-- 1. RECIPES & CODEX MODAL -->
+  <div id="modal-recipes" class="modal-backdrop hidden">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>📖 THE SACRED INFINITY BURGER CODEX</h2>
+        <button class="modal-close-btn" data-close="modal-recipes">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p class="modal-desc">Synthesize these legendary mythical burgers to unleash cosmic rewards and golden trophies!</p>
+        <div class="recipe-grid" id="recipes-grid">
+          <!-- Populated in JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. UPGRADES & SHOP MODAL -->
+  <div id="modal-upgrades" class="modal-backdrop hidden">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>⚡ CHEF WORKSHOP & UPGRADES</h2>
+        <button class="modal-close-btn" data-close="modal-upgrades">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="upgrades-grid" id="upgrades-grid">
+          <!-- Populated in JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3. REALMS & RESTAURANTS SELECTOR -->
+  <div id="modal-realms" class="modal-backdrop hidden">
+    <div class="modal-window">
+      <div class="modal-header">
+        <h2>🌌 EXPAND INTO INFINITE REALMS</h2>
+        <button class="modal-close-btn" data-close="modal-realms">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="realms-grid" id="realms-grid">
+          <!-- Populated in JS -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. COMPETITION CHALLENGE MODAL -->
+  <div id="modal-competition" class="modal-backdrop hidden">
+    <div class="modal-window comp-modal">
+      <div class="modal-header">
+        <h2>🏆 INFINITY CHEF SHOWDOWN</h2>
+        <button class="modal-close-btn" data-close="modal-competition">&times;</button>
+      </div>
+      <div class="modal-body">
+        <div class="competition-arena">
+          <div class="comp-profile player-side">
+            <span class="comp-avatar">👨‍🍳</span>
+            <h3>You (Infinity Apprentice)</h3>
+            <div class="progress-bar-wrap">
+              <div class="progress-fill" id="player-comp-progress" style="width: 0%"></div>
+            </div>
+            <span class="comp-score" id="player-comp-score">0 pts</span>
+          </div>
+
+          <div class="vs-badge">VS</div>
+
+          <div class="comp-profile rival-side">
+            <span class="comp-avatar" id="rival-avatar">🤖</span>
+            <h3 id="rival-name">Chef Robo-Sizzle 9000</h3>
+            <div class="progress-bar-wrap">
+              <div class="progress-fill rival" id="rival-comp-progress" style="width: 0%"></div>
+            </div>
+            <span class="comp-score" id="rival-comp-score">0 pts</span>
+          </div>
+        </div>
+
+        <div class="comp-task-box">
+          <h4>CHALLENGE: <span id="comp-challenge-title">The Neon Tower Speedcook!</span></h4>
+          <p id="comp-challenge-desc">Stack 12 ingredients with at least 2 Golden Dragon Steaks in under 45 seconds!</p>
+          <button id="btn-start-comp" class="action-btn serve-btn">START SHOWDOWN 🔥</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. BURGER REVIEW SCORECARD (SERVED CELEBRATION) -->
+  <div id="modal-scorecard" class="modal-backdrop hidden">
+    <div class="modal-window scorecard-window">
+      <div class="scorecard-header">
+        <div class="golden-crown">👑</div>
+        <h2 id="sc-title">CULINARY MASTERPIECE!</h2>
+        <p id="sc-subtitle">Emperor Gluttonus is weeping with joy!</p>
+      </div>
+
+      <div class="scorecard-stats">
+        <div class="score-circle">
+          <span class="sc-number" id="sc-final-score">98</span>
+          <span class="sc-label">INFINITY SCORE</span>
+        </div>
+        <div class="sc-breakdown">
+          <div class="sc-row"><span>Recipe Accuracy:</span> <strong id="sc-accuracy">100%</strong></div>
+          <div class="sc-row"><span>Height Bonus:</span> <strong id="sc-height">+250 pts</strong></div>
+          <div class="sc-row"><span>Cosmic Infusion:</span> <strong id="sc-infusion">+150 pts</strong></div>
+          <div class="sc-row"><span>Speed Bonus:</span> <strong id="sc-speed">+120 pts</strong></div>
+          <div class="sc-divider"></div>
+          <div class="sc-row total"><span>REWARDS:</span> <span class="reward-pill" id="sc-reward">+350 🪙 | +5 ✨ | +100 XP</span></div>
+        </div>
+      </div>
+
+      <div class="scorecard-actions">
+        <button id="btn-scorecard-continue" class="action-btn serve-btn">NEXT CUSTOMER 🚀</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+</body>
+</html>
